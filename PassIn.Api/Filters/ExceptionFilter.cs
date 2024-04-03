@@ -27,12 +27,17 @@ public class ExceptionFilter : IExceptionFilter
         if (context.Exception is NotFoundException)
         {
             context.HttpContext.Response.StatusCode = (int)HttpStatusCode.NotFound;
-            context.Result = new NotFoundObjectResult(new ResponseErrorJson("Erro desconhecido"));
+            context.Result = new NotFoundObjectResult(new ResponseErrorJson(context.Exception.Message));
         }
         else if (context.Exception is ErrorOnValidationException)
         {
             context.HttpContext.Response.StatusCode = (int)HttpStatusCode.BadRequest;
-            context.Result = new BadRequestObjectResult(new ResponseErrorJson("Erro desconhecido"));
+            context.Result = new BadRequestObjectResult(new ResponseErrorJson(context.Exception.Message));
+        }
+        else if (context.Exception is ConflictException)
+        {
+            context.HttpContext.Response.StatusCode = (int)HttpStatusCode.Conflict;
+            context.Result = new ConflictObjectResult(new ResponseErrorJson(context.Exception.Message));
         }
     }
     private void ThrowUnknowError(ExceptionContext  context)

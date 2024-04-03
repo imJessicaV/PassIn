@@ -1,8 +1,10 @@
 ﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.Extensions.Options;
 using PassIn.Communication.Requests;
+using PassIn.Communication.Responses;
 using PassIn.Exceptions;
 using PassIn.Infrastructure;
+using PassIn.Infrastructure.Entities;
 using System.Net.Mail;
 
 namespace PassIn.Application.UseCases.Events.RegisterAttendee;
@@ -13,7 +15,7 @@ public class RegisterAttendeeOnEventUsecase
     {
         _dbContext = new PassInDbContext();
     }
-    public void Execute(Guid eventId,  RequestRegisterEventJson request)
+    public ResponseRegisteredJson Execute(Guid eventId,  RequestRegisterEventJson request)
     {
         Validate(eventId, request);
 
@@ -27,15 +29,19 @@ public class RegisterAttendeeOnEventUsecase
 
         _dbContext.Attendees.Add(entity);
         _dbContext.SaveChanges();
-        
+
+        return new ResponseRegisteredJson
+        {
+            Id = entity.Id,
+        };
 
     }
 
     private void Validate(Guid eventId, RequestRegisterEventJson request)
     {
-        var eventExist = _dbContext.Events.Any(ev => ev.Id == eventId);
+        var eventEntity = _dbContext.Events.Find(eventId);
 
-        if (eventExist == false)
+        if (eventEntity is null)
             throw new NotFoundException("Id do evento não existe");
 
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -52,8 +58,15 @@ public class RegisterAttendeeOnEventUsecase
         var attendeeAlredyRegistered = _dbContext.Attendees.Any(attendee => attendee.Email.Equals(request.Email) && attendee.Event_Id == eventId);
         if (attendeeAlredyRegistered)
         {
-            throw new ErrorOnValidationException("Você já está registrado no evento informado");
+            throw new ConflictException("Você já está registrado no evento informado");
         }
+
+        var attendeeForEvent = _dbContext.Attendees.Count(attendee => attendee.Event_Id == eventId);
+        if (attendeeForEvent == eventEntity.Maximum_Attendees)
+        {
+            throw new ErrorOnValidationException("Não há mais vagas para esse evento");
+        }
+
     }
     private bool EmailIsValide(string email)
     {
