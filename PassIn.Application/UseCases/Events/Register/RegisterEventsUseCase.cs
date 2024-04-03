@@ -39,16 +39,16 @@ public class RegisterEventsUseCase
     {
         if(request.MaximumAttendees <= 0)
         {
-            throw new PassInException("Numero de participantes é inválido");
+            throw new ErrorOnValidationException("Numero de participantes é inválido");
         }
 
         if(string.IsNullOrWhiteSpace(request.Title))
         {
-            throw new PassInException("O titulo não pode ser vazio");
+            throw new ErrorOnValidationException("O titulo não pode ser vazio");
         }
         if (string.IsNullOrWhiteSpace(request.Details))
         {
-            throw new PassInException("A descrição não pode ser vazio");
+            throw new ErrorOnValidationException("A descrição não pode ser vazio");
         }
     }
 }
